@@ -28,6 +28,20 @@ function routeRequest()
             header('Content-Type: application/json');
             echo $comments;
             break;
+        case '/tasks.json':
+
+        $tasks = file_get_contents('_tasks.json');
+            if($_SERVER['REQUEST_METHOD'] === 'POST') {
+                $tasksDecoded = json_decode($tasks, true);
+                $tasksDecoded[] = ['content' => $_POST['content'], 'other' => $_POST['other']];
+
+                $tasks = json_encode($tasksDecoded, JSON_PRETTY_PRINT);
+
+                file_put_contents('_tasks.json', $tasks);
+            }
+            header('Content-Type: application/json');
+            echo $tasks;
+            break;
         default:
             return false;
     }
