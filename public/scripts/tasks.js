@@ -1,7 +1,7 @@
 
 var ToDoList = React.createClass({
   getInitialState: function() {
-    this.bread = [1,2,    3, 4,5,6];
+    // this.bread = [1,2,    3, 4,5,6];
     return {data: []};
   },
   componentDidMount : function() {
@@ -14,8 +14,8 @@ var ToDoList = React.createClass({
       dataType: 'json',
       success: function(data) {
         this.setState({data: data});
-        console.log("complete");
-        console.log(this.state.data);
+        // console.log("complete");
+        // console.log(this.state.data);
       }.bind(this),
       error: function(xhr, status, err) {
         console.error(this.props.url, status, err.toString());
@@ -41,11 +41,33 @@ var ToDoList = React.createClass({
         });
     });
   },
+  handleTaskDelete: function(id) {
+    console.log("handleTaskDelete " + id);
+    console.log(this.state.data);
+
+    var temp = this.state.data;
+    delete temp[id]
+    console.log(temp)
+    this.setState(temp)
+
+    $.ajax({
+          url: this.props.url,
+          dataType: 'json',
+          type: 'DELETE',
+          data: { id : id},
+          success: function(data) {
+            this.setState({data: data});
+          }.bind(this),
+          error: function(xhr, status, err) {
+            console.error(this.props.url, status, err.toString());
+          }.bind(this)
+        });
+  }, 
   render: function() {
     return (
       <div id="toDoList">
         <p>checkboxes</p>
-        <CheckboxList data11={this.bread} data={this.state.data} />
+        <CheckboxList data11={this.bread} data={this.state.data}  onTaskDelete={this.handleTaskDelete}/>
         
         <p>footer</p>
         <AddItem   random="simple"  onTaskSubmit={this.handleTaskSubmit} />
@@ -54,20 +76,42 @@ var ToDoList = React.createClass({
   }
 });
 
+
 var CheckboxList = React.createClass({
   getInitialState: function() {
-    console.log(this.props.data11);
+    // console.log(this.props.data11);
 
     return {data: []};
   },
+  checkboxListHandleDelete: function(id) {
+    console.log("checkboxListHandleDelete")
+    this.props.onTaskDelete(id);
+  },
   render: function() {
+    // console.log(this.props)
     var checkBoxes = this.props.data.map(function (e) {
       console.log("in checkboxes")
       console.log(e.content)
+      console.log(e)
+      // console.log(this)
+      console.log(this.props)
       return (
-          <Checkbox content={e.content} />
+          <Checkbox content={e.content} id={e.id}  checkboxListDeleteSubmit={this.checkboxListHandleDelete} />
         );
-    });
+    }, this);
+    var checkBoxesData = this.props.data;
+    // var checkBoxes = "";
+    // console.log(this.props.data)
+    console.log(checkBoxesData)
+    console.log(checkBoxesData.length)
+    // console.log(this.props.data[0])
+    // console.log(this.props.data[0].content)
+    for (var i = checkBoxesData.length - 1; i >= 0; i--) {
+      console.log(checkBoxesData[i]);
+      // return (
+      //     <Checkbox content={e.content} />
+      //   );
+    };
     return (
       <div className="randomList">
         {checkBoxes}
@@ -76,12 +120,16 @@ var CheckboxList = React.createClass({
   }
 });
 
+
 var Checkbox = React.createClass({
   handleDelete: function(e) {
     e.preventDefault();
     console.log("handleDelete");
     console.log(this.props.content);
-    console.log(this.props.other);
+    console.log(this.props);
+    console.log(this.props.id);
+    var id = this.props.id;
+    this.props.checkboxListDeleteSubmit(id);
   },
   render: function() {
     return (
@@ -91,6 +139,7 @@ var Checkbox = React.createClass({
     );
   }
 });
+
 
 var AddItem = React.createClass({
   handleSubmit: function(e) {

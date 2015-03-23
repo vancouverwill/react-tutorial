@@ -33,11 +33,48 @@ function routeRequest()
         $tasks = file_get_contents('_tasks.json');
             if($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $tasksDecoded = json_decode($tasks, true);
-                $tasksDecoded[] = ['content' => $_POST['content'], 'other' => $_POST['other']];
+                // $tasksDecoded[] = ['content' => $_POST['content'], 'other' => $_POST['other']];
+                $tasksDecoded[] = ['id' => count($tasksDecoded), 'content' => $_POST['content'], 'other' => $_POST['other']];
+                // $tasksDecoded["key_" . count($tasksDecoded)] = ['id' => count($tasksDecoded), 'content' => $_POST['content'], 'other' => $_POST['other']];
 
+// var_dump($tasksDecoded);
                 $tasks = json_encode($tasksDecoded, JSON_PRETTY_PRINT);
 
                 file_put_contents('_tasks.json', $tasks);
+            }
+            elseif($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+                $tasksDecoded = json_decode($tasks, true);
+                $content = file_get_contents('php://input');
+
+                $array = array();
+
+                parse_str($content, $array);
+
+                // var_dump($content);
+                // var_dump($array);
+                // 
+                if (isset($array["id"])) {
+                    // var_dump($array["id"]);
+                    // unset($tasksDecoded[$array["id"]]);
+
+                    foreach($tasksDecoded AS $index => $task) {
+                        if ($task["id"] == $array["id"]) {
+                            // unset($task);
+                            unset($tasksDecoded[$index]);
+                        }
+                    }
+                    // var_dump($tasksDecoded);
+                    $tasks = json_encode(array_values($tasksDecoded), JSON_PRETTY_PRINT);
+
+                    file_put_contents('_tasks.json', $tasks);
+                }
+
+                // $index = $_Se
+                // $tasksDecoded[$index] = null;
+                // $tasks = json_encode($tasksDecoded, JSON_PRETTY_PRINT);
+
+                // file_put_contents('_tasks.json', $tasks);
+
             }
             header('Content-Type: application/json');
             echo $tasks;
