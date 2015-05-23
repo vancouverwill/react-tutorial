@@ -17,7 +17,7 @@ type comment struct {
 	Text   string `json:"text"`
 }
 
-const dataFile = "./_comments.json"
+const dataFile = "./comments.json"
 
 var commentMutex = new(sync.Mutex)
 
@@ -68,7 +68,13 @@ func handleComments(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Cache-Control", "no-cache")
+		io.Copy(w, bytes.NewReader(commentData))
+
 	case "GET":
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Cache-Control", "no-cache")
 		// stream the contents of the file to the response
 		io.Copy(w, bytes.NewReader(commentData))
 
@@ -81,5 +87,6 @@ func handleComments(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/comments.json", handleComments)
 	http.Handle("/", http.FileServer(http.Dir("./public")))
+	log.Println("Server started: http://localhost:3000")
 	log.Fatal(http.ListenAndServe(":3000", nil))
 }
