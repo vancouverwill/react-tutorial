@@ -11,12 +11,13 @@ if($scriptInvokedFromCli) {
 
 function routeRequest()
 {
-    $comments = file_get_contents('comments.json');
+    
     switch($_SERVER["REQUEST_URI"]) {
         case '/':
             echo file_get_contents('./public/index.html');
             break;
         case '/comments.json':
+            $comments = file_get_contents('comments.json');
             if($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $commentsDecoded = json_decode($comments, true);
                 $commentsDecoded[] = ['author'  => $_POST['author'],
@@ -38,7 +39,6 @@ function routeRequest()
                 $tasksDecoded[] = ['id' => count($tasksDecoded), 'content' => $_POST['content'], 'other' => $_POST['other']];
                 // $tasksDecoded["key_" . count($tasksDecoded)] = ['id' => count($tasksDecoded), 'content' => $_POST['content'], 'other' => $_POST['other']];
 
-// var_dump($tasksDecoded);
                 $tasks = json_encode($tasksDecoded, JSON_PRETTY_PRINT);
 
                 file_put_contents('_tasks.json', $tasks);
