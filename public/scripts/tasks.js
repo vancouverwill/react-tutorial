@@ -9,7 +9,7 @@ var ToDoList = React.createClass({
   },
   loadCommentsFromServer: function() {
     $.ajax({
-      url: "tasks.json",
+      url: this.props.url,
       dataType: 'json',
       success: function(data) {
         this.setState({data: data});
@@ -129,7 +129,7 @@ var AddItem = React.createClass({
   }
 });
 
-React.render(
-  <ToDoList   url={"tasks.json"}   pollInterval={10000} />,
+ReactDOM.render(
+  <ToDoList url="/api/tasks" pollInterval={2000} />,
   document.getElementById('content2')
 );

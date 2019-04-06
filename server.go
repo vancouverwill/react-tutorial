@@ -1,3 +1,15 @@
+/**
+ * This file provided by Facebook is for non-commercial testing and evaluation
+ * purposes only. Facebook reserves all rights not expressly granted.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * FACEBOOK BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 package main
 
 import (
@@ -10,9 +22,11 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 )
 
 type comment struct {
+	ID     int64  `json:"id"`
 	Author string `json:"author"`
 	Text   string `json:"text"`
 }
@@ -28,7 +42,7 @@ func handleComments(w http.ResponseWriter, r *http.Request) {
 	commentMutex.Lock()
 	defer commentMutex.Unlock()
 
-	// Stat the file, so we can find it's current permissions
+	// Stat the file, so we can find its current permissions
 	fi, err := os.Stat(dataFile)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Unable to stat the data file (%s): %s", dataFile, err), http.StatusInternalServerError)
@@ -45,14 +59,14 @@ func handleComments(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "POST":
 		// Decode the JSON data
-		comments := make([]comment, 0)
+		var comments []comment
 		if err := json.Unmarshal(commentData, &comments); err != nil {
 			http.Error(w, fmt.Sprintf("Unable to Unmarshal comments from data file (%s): %s", dataFile, err), http.StatusInternalServerError)
 			return
 		}
 
 		// Add a new comment to the in memory slice of comments
-		comments = append(comments, comment{Author: r.FormValue("author"), Text: r.FormValue("text")})
+		comments = append(comments, comment{ID: time.Now().UnixNano() / 1000000, Author: r.FormValue("author"), Text: r.FormValue("text")})
 
 		// Marshal the comments to indented json.
 		commentData, err = json.MarshalIndent(comments, "", "    ")
@@ -70,11 +84,13 @@ func handleComments(w http.ResponseWriter, r *http.Request) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		io.Copy(w, bytes.NewReader(commentData))
 
 	case "GET":
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		// stream the contents of the file to the response
 		io.Copy(w, bytes.NewReader(commentData))
 
@@ -85,8 +101,12 @@ func handleComments(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/comments.json", handleComments)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
+	}
+	http.HandleFunc("/api/comments", handleComments)
 	http.Handle("/", http.FileServer(http.Dir("./public")))
-	log.Println("Server started: http://localhost:3000")
-	log.Fatal(http.ListenAndServe(":3000", nil))
+	log.Println("Server started: http://localhost:" + port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

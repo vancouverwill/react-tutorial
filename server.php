@@ -1,10 +1,26 @@
 <?php
+/**
+ * This file provided by Facebook is for non-commercial testing and evaluation
+ * purposes only. Facebook reserves all rights not expressly granted.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * FACEBOOK BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 $scriptInvokedFromCli =
     isset($_SERVER['argv'][0]) && $_SERVER['argv'][0] === 'server.php';
 
 if($scriptInvokedFromCli) {
-    echo 'starting server on port 3000' . PHP_EOL;
-    exec('php -S localhost:3000 -t public server.php');
+    $port = getenv('PORT');
+    if (empty($port)) {
+        $port = "3000";
+    }
+
+    echo 'starting server on port '. $port . PHP_EOL;
+    exec('php -S localhost:'. $port . ' -t public server.php');
 } else {
     return routeRequest();
 }
@@ -12,11 +28,12 @@ if($scriptInvokedFromCli) {
 function routeRequest()
 {
     
-    switch($_SERVER["REQUEST_URI"]) {
-        case '/':
+        $uri = $_SERVER['REQUEST_URI'];
+    if ($uri == '/') {
             echo file_get_contents('./public/index.html');
-            break;
-        case '/comments.json':
+            // break;
+        // case '/comments.json':
+    } elseif (preg_match('/\/api\/comments(\?.*)?/', $uri)) {
             $comments = file_get_contents('comments.json');
             if($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $commentsDecoded = json_decode($comments, true);
@@ -28,10 +45,10 @@ function routeRequest()
             }
             header('Content-Type: application/json');
             header('Cache-Control: no-cache');
+             header('Access-Control-Allow-Origin: *');
             echo $comments;
-            break;
-        case '/tasks.json':
-
+            // break;
+    } elseif (preg_match('/\/api\/tasks(\?.*)?/', $uri)) {
         $tasks = file_get_contents('_tasks.json');
             if($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $tasksDecoded = json_decode($tasks, true);
@@ -51,20 +68,13 @@ function routeRequest()
 
                 parse_str($content, $array);
 
-                // var_dump($content);
-                // var_dump($array);
-                // 
-                if (isset($array["id"])) {
-                    // var_dump($array["id"]);
-                    // unset($tasksDecoded[$array["id"]]);
 
+                if (isset($array["id"])) {
                     foreach($tasksDecoded AS $index => $task) {
                         if ($task["id"] == $array["id"]) {
-                            // unset($task);
                             unset($tasksDecoded[$index]);
                         }
                     }
-                    // var_dump($tasksDecoded);
                     $tasks = json_encode(array_values($tasksDecoded), JSON_PRETTY_PRINT);
 
                     file_put_contents('_tasks.json', $tasks);
@@ -78,10 +88,11 @@ function routeRequest()
 
             }
             header('Content-Type: application/json');
+            header('Cache-Control: no-cache');
+             header('Access-Control-Allow-Origin: *');
             echo $tasks;
-            break;
-        default:
-            return false;
-    }
+       } else {
+        return false;
+        }
+    
 }
-
